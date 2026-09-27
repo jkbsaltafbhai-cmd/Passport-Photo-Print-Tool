@@ -70,17 +70,9 @@ canvas{max-width:100%;height:auto;box-shadow:0 2px 14px rgba(0,0,0,.25);backgrou
   <button class="btn" id="cropBtn">✂ Crop photo</button>
   <span id="fname" style="color:var(--mut);font-size:13px"></span>
   <div style="margin-top:8px">
-   <div class="row"><label>Zoom<input type="range" id="zoom" min="1" max="3" step="0.01" value="1"></label></div>
-   <div class="row"><label>Move left / right<input type="range" id="ox" min="-100" max="100" value="0"></label></div>
-   <div class="row"><label>Move up / down<input type="range" id="oy" min="-100" max="100" value="0"></label></div>
-   <div class="row" style="margin-top:8px"><label>Straighten<input type="range" id="rot" min="-15" max="15" step="0.5" value="0"></label></div>
-   <div class="row"><button class="btn" id="rotL">⟲ Rotate 90°</button><button class="btn" id="rotR">Rotate 90° ⟳</button><button class="btn" id="undo" style="margin-left:auto">↩ Undo</button></div>
+   <div style="color:var(--mut);font-size:12px;margin-bottom:8px">On the sheet: drag a photo to move it, scroll over it to zoom.</div>
+   <div class="row"><button class="btn" id="undo" style="margin-left:auto">↩ Undo</button></div>
    <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)">
-    <div class="row"><button class="btn" id="auto">✨ Auto fix (dull / blur)</button><button class="btn" id="rst">Reset</button></div>
-    <div class="row"><label>Brightness<input type="range" id="br" min="-50" max="50" value="0"></label></div>
-    <div class="row"><label>Contrast<input type="range" id="ct" min="-50" max="50" value="0"></label></div>
-    <div class="row"><label>Sharpness<input type="range" id="sh" min="0" max="100" value="0"></label></div>
-    <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)">
      <button class="btn" id="bgb">🪄 Remove background</button>
      <div id="bgo" style="display:none;margin-top:8px">
       <div class="row"><label>Fill<select id="bgt"><option value="color">Solid colour</option><option value="gradient">Gradient</option><option value="stripes">Stripes</option><option value="dots">Dots</option><option value="checker">Checker</option></select></label></div>
@@ -90,7 +82,6 @@ canvas{max-width:100%;height:auto;box-shadow:0 2px 14px rgba(0,0,0,.25);backgrou
       <div class="row"><label>Edge smoothing<input type="range" id="bge" min="0" max="4" value="1"></label></div>
       <div style="color:var(--mut);font-size:12px">Works best on a plain, even background. Raise Sensitivity if old background is left; lower it if the person gets cut.</div>
      </div>
-    </div>
    </div>
   </div>
  </div>
@@ -154,6 +145,8 @@ canvas{max-width:100%;height:auto;box-shadow:0 2px 14px rgba(0,0,0,.25);backgrou
  <canvas id="cc"></canvas>
  <div class="row" style="margin-top:10px"><label style="min-width:100%">Crop size<input type="range" id="cs" min="10" max="100" value="100"></label></div>
  <label class="tick" style="margin-top:8px;justify-content:center"><input type="checkbox" id="cl" checked> Lock ratio (photo size)</label>
+ <div class="row" style="margin-top:8px"><label style="min-width:100%">Straighten<input type="range" id="rot" min="-15" max="15" step="0.5" value="0"></label></div>
+ <div class="row" style="margin-top:8px"><button class="btn" id="rotL">⟲ Rotate 90°</button><button class="btn" id="rotR">Rotate 90° ⟳</button></div>
  <div class="row" style="margin-top:8px"><button class="btn" id="cX">Cancel</button><button class="btn" id="cR">Reset</button><button class="btn pri" id="cA" style="margin-left:auto">Apply crop</button></div>
  <div style="color:var(--mut);font-size:12px;margin-top:6px">Drag inside to move · drag any corner or side to resize</div>
 </div></div>
@@ -161,7 +154,7 @@ canvas{max-width:100%;height:auto;box-shadow:0 2px 14px rgba(0,0,0,.25);backgrou
 <script>
 const $=id=>document.getElementById(id);
 const F={mm:1,cm:10,in:25.4};
-const PF={img:null,src:null,orig:null,pw:35,ph:45,zoom:1,ox:0,oy:0,auto:false,br:0,ct:0,sh:0,bgOn:false,bgt:'color',bgc1:'#ffffff',bgc2:'#cfe6ff',bgtol:30,bge:1,rot:0,hist:null,copies:6,prev:1,_mk:null,name:''};
+const PF={img:null,src:null,orig:null,pw:35,ph:45,zoom:1,ox:0,oy:0,bgOn:false,bgt:'color',bgc1:'#ffffff',bgc2:'#cfe6ff',bgtol:30,bge:1,rot:0,hist:null,copies:6,prev:1,_mk:null,name:''};
 const newPhoto=c=>Object.assign({},PF,{copies:c});
 const P=[newPhoto(6)];let A=0;
 const S={sheet:'4x6',orient:'portrait',unit:'mm',cw:210,ch:297,gap:2,margin:5,bord:false,bc:'#000000',bt:0.352778,cut:false,newRow:false};
@@ -256,7 +249,6 @@ function setColor(c){S.bc=c;$('bc').value=c;document.querySelectorAll('#sw butto
 $('bc').oninput=e=>setColor(e.target.value);
 $('n').addEventListener('input',e=>{const v=parseInt(e.target.value,10);if(v>=1){S.copies=Math.min(v,300);render()}});
 $('n').addEventListener('change',()=>{render();$('n').value=S.copies});
-['zoom','ox','oy'].forEach(k=>$(k).addEventListener('input',e=>{S[k]=parseFloat(e.target.value);render()}));
 document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>{
  document.querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c===b));
  S.sheet=b.dataset.s;$('custom').style.display=S.sheet==='custom'?'flex':'none';render();
@@ -302,54 +294,33 @@ function composite(p,d,a,w,h){
  const f=fillCanvas(p,w,h).getContext('2d').getImageData(0,0,w,h).data;
  for(let i=0,p=0;i<a.length;i++,p+=4){const t=a[i]/255;if(t<1){const u=1-t;d[p]=d[p]*t+f[p]*u;d[p+1]=d[p+1]*t+f[p+1]*u;d[p+2]=d[p+2]*t+f[p+2]*u}}
 }
-function syncFix(){$('br').value=S.br;$('ct').value=S.ct;$('sh').value=S.sh;$('auto').classList.toggle('on',S.auto);$('bgb').classList.toggle('on',S.bgOn);$('bgo').style.display=S.bgOn?'block':'none'}
+function syncFix(){$('bgb').classList.toggle('on',S.bgOn);$('bgo').style.display=S.bgOn?'block':'none'}
 function recompute(p){
  if(!p.img)return;
- if(!p.auto&&!p.br&&!p.ct&&!p.sh&&!p.bgOn){p.src=p.img;return}
+ if(!p.bgOn){p.src=p.img;return}
  const im=p.img,k=Math.min(1,1800/Math.max(im.width,im.height)),w=Math.round(im.width*k),h=Math.round(im.height*k);
  const c=document.createElement('canvas');c.width=w;c.height=h;
  const g=c.getContext('2d',{willReadFrequently:true});g.drawImage(im,0,0,w,h);
  const id=g.getImageData(0,0,w,h),d=id.data,N=w*h;
  let alpha=null;if(p.bgOn)alpha=getMask(p,d,w,h);
- let lo=0,hi=255,gam=1;
- if(p.auto){
-  const hist=new Uint32Array(256);
-  for(let i=0;i<d.length;i+=4)hist[(0.299*d[i]+0.587*d[i+1]+0.114*d[i+2])|0]++;
-  let a=0;while(lo<254&&(a+=hist[lo])<N*0.01)lo++;
-  a=0;hi=255;while(hi>lo+20&&(a+=hist[hi])<N*0.01)hi--;
-  hi=Math.max(hi,lo+20);
-  let m=0;for(let i=0;i<256;i++)m+=Math.min(1,Math.max(0,(i-lo)/(hi-lo)))*hist[i];
-  m=Math.min(0.9,Math.max(0.1,m/N));
-  gam=Math.min(1.6,Math.max(0.6,Math.log(0.48)/Math.log(m)));
- }
- const cc=p.ct*2.55,cf=(259*(cc+255))/(255*(259-cc)),bv=p.br*2.55,lut=new Uint8ClampedArray(256);
- for(let v=0;v<256;v++){let t=v/255;if(p.auto){t=Math.min(1,Math.max(0,(v-lo)/(hi-lo)));t=Math.pow(t,gam)}t=t*255;lut[v]=(t-128)*cf+128+bv}
- const sat=p.auto?1.15:1;
- for(let i=0;i<d.length;i+=4){let r=lut[d[i]],gg=lut[d[i+1]],b=lut[d[i+2]];if(sat!==1){const l=0.299*r+0.587*gg+0.114*b;r=l+(r-l)*sat;gg=l+(gg-l)*sat;b=l+(b-l)*sat}d[i]=r;d[i+1]=gg;d[i+2]=b}
- if(p.sh>0){
-  const kk=p.sh/100*0.9,src=new Uint8ClampedArray(d);
-  for(let y=1;y<h-1;y++)for(let x=1;x<w-1;x++){const q0=(y*w+x)*4;for(let ch=0;ch<3;ch++){const q=q0+ch;d[q]=src[q]*(1+4*kk)-kk*(src[q-4]+src[q+4]+src[q-w*4]+src[q+w*4])}}
- }
- if(alpha)composite(p,d,alpha,w,h);
+   if(alpha)composite(p,d,alpha,w,h);
  g.putImageData(id,0,0);p.src=c;
 }
 function fix(p){p=p||P[A];recompute(p);if(p===P[A])render()}
 const qf=()=>{clearTimeout(ft);ft=setTimeout(()=>fix(),60)};
-function snap(){const p=P[A];return {img:p.img,orig:p.orig,src:p.src,rot:p.rot||0,zoom:p.zoom,ox:p.ox,oy:p.oy,auto:p.auto,br:p.br,ct:p.ct,sh:p.sh,bgOn:p.bgOn,bgt:p.bgt,bgc1:p.bgc1,bgc2:p.bgc2,bgtol:p.bgtol,bge:p.bge,_mk:p._mk}}
+function snap(){const p=P[A];return {img:p.img,orig:p.orig,src:p.src,rot:p.rot||0,zoom:p.zoom,ox:p.ox,oy:p.oy,bgOn:p.bgOn,bgt:p.bgt,bgc1:p.bgc1,bgc2:p.bgc2,bgtol:p.bgtol,bge:p.bge,_mk:p._mk}}
 function pushHist(){const p=P[A];p.hist=p.hist||[];p.hist.push(snap());if(p.hist.length>8)p.hist.shift()}
 function doUndo(){const p=P[A];if(!p.hist||!p.hist.length){say('Nothing to undo.');return}Object.assign(p,p.hist.pop());refreshUI();queueSave()}
 $('undo').onclick=doUndo;
 let dragSnap=false;
-['br','ct','sh','bgtol','bge'].forEach(k=>{
+['bgtol','bge'].forEach(k=>{
  $(k).addEventListener('pointerdown',()=>{if(!dragSnap){pushHist();dragSnap=true}});
  $(k).addEventListener('pointerup',()=>{dragSnap=false});
  $(k).addEventListener('input',e=>{S[k]=parseInt(e.target.value,10);qf()});
 });
-$('auto').onclick=()=>{if(!S.img){say('Upload a photo first.');return}pushHist();S.auto=!S.auto;S.sh=S.auto?40:0;syncFix();fix();queueSave()};
-$('rst').onclick=()=>{if(!S.img)return;pushHist();S.bgOn=false;S.auto=false;S.br=0;S.ct=0;S.sh=0;syncFix();fix();queueSave()};
 $('bgb').onclick=()=>{if(!S.img){say('Upload a photo first.');return}pushHist();S.bgOn=!S.bgOn;syncFix();fix();queueSave()};
 $('rot').addEventListener('pointerdown',()=>pushHist());
-$('rot').addEventListener('input',e=>{S.rot=parseFloat(e.target.value);render();queueSave()});
+$('rot').addEventListener('input',e=>{S.rot=parseFloat(e.target.value);render();if($('cropM').style.display==='flex')cropDraw();queueSave()});
 function cropMax0(im){return im}
 function bake90(dir){
  if(!S.orig)return;
@@ -359,11 +330,11 @@ function bake90(dir){
  const m=cropMax(),W=c.width,H=c.height;
  const cc=document.createElement('canvas');cc.width=Math.round(m.w);cc.height=Math.round(m.h);
  cc.getContext('2d').drawImage(c,(W-m.w)/2,(H-m.h)/2,m.w,m.h,0,0,cc.width,cc.height);
- S.img=cc;S.zoom=1;S.ox=0;S.oy=0;$('zoom').value=1;$('ox').value=0;$('oy').value=0;
+ S.img=cc;S.zoom=1;S.ox=0;S.oy=0;
  fix();queueSave();
 }
-$('rotL').onclick=()=>{if(!S.orig){say('Upload a photo first.');return}pushHist();bake90(-1)};
-$('rotR').onclick=()=>{if(!S.orig){say('Upload a photo first.');return}pushHist();bake90(1)};
+$('rotL').onclick=()=>{if(!S.orig){say('Upload a photo first.');return}pushHist();bake90(-1);cropOpen()};
+$('rotR').onclick=()=>{if(!S.orig){say('Upload a photo first.');return}pushHist();bake90(1);cropOpen()};
 function bgUI(){$('bgc2w').style.display=S.bgt==='color'?'none':'block';document.querySelectorAll('#bgsw button').forEach(b=>b.classList.toggle('on',b.dataset.c===S.bgc1))}
 ['#ffffff','#dbeafe','#93c5fd','#3b82f6','#dc2626','#d1d5db','#f5efe0'].forEach(c=>{const b=document.createElement('button');b.dataset.c=c;b.style.background=c;b.title=c;b.onclick=()=>{S.bgc1=c;$('bgc1').value=c;bgUI();fix()};$('bgsw').appendChild(b)});
 $('bgt').onchange=e=>{S.bgt=e.target.value;bgUI();fix()};
@@ -379,7 +350,7 @@ function renderTabs(){
  if(P.length>1){const b=document.createElement('button');b.className='pchip';b.textContent='🗑 Remove';b.onclick=()=>{P.splice(A,1);A=Math.max(0,Math.min(A,P.length-1));refreshUI()};t.appendChild(b)}
 }
 function refreshUI(){
- $('zoom').value=S.zoom;$('ox').value=S.ox;$('oy').value=S.oy;$('rot').value=S.rot||0;
+ $('rot').value=S.rot||0;
  $('bgt').value=S.bgt;$('bgc1').value=S.bgc1;$('bgc2').value=S.bgc2;$('bgtol').value=S.bgtol;$('bge').value=S.bge;
   syncFix();bgUI();$('fname').textContent=S.name||'';$('n').value=S.copies;renderTabs();render();
 }
@@ -387,23 +358,61 @@ $('nr').onchange=e=>{S.newRow=e.target.checked;render()};
 function cvPt(e){const c=$('cv'),b=c.getBoundingClientRect();const px=(e.clientX-b.left)*c.width/b.width,py=(e.clientY-b.top)*c.height/b.height;return{x:px/4,y:py/4}}
 function hitTest(xmm,ymm){const{cells}=place();for(const q of cells){if(xmm>=q.x&&xmm<=q.x+q.w&&ymm>=q.y&&ymm<=q.y+q.h)return q}return null}
 function imgSpan(p,wmm,hmm){const im=p.src||p.img;if(!im)return null;const rad=(p.rot||0)*Math.PI/180,extra=(Math.abs(Math.cos(rad))+Math.abs(Math.sin(rad)))*1.02;const s=Math.max(wmm/im.width,hmm/im.height)*p.zoom*extra;return{dw:im.width*s,dh:im.height*s}}
-let panDrag=null;
+let panDrag=null,pointers=new Map(),pinch=null;
 $('cv').addEventListener('pointerdown',e=>{
+ pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ $('cv').setPointerCapture(e.pointerId);
+ if(pointers.size===2){
+  panDrag=null;
+  const ids=[...pointers.keys()],a=pointers.get(ids[0]),b=pointers.get(ids[1]);
+  const mid={clientX:(a.x+b.x)/2,clientY:(a.y+b.y)/2};
+  const pt=cvPt(mid),hit=hitTest(pt.x,pt.y);
+  if(hit){
+   if(A!==hit.k){A=hit.k;refreshUI()}
+   const p=P[A];
+   pinch={ids,dist0:Math.hypot(a.x-b.x,a.y-b.y),startZoom:p.zoom,k:A};
+  }
+  e.preventDefault();return;
+ }
  const pt=cvPt(e),hit=hitTest(pt.x,pt.y);if(!hit)return;
  if(A!==hit.k){A=hit.k;refreshUI()}
  const p=P[A];if(!p.img)return;
  const span=imgSpan(p,hit.w,hit.h);if(!span)return;
  panDrag={sx:pt.x,sy:pt.y,sox:p.ox,soy:p.oy,rx:(span.dw-hit.w)/2,ry:(span.dh-hit.h)/2};
- $('cv').setPointerCapture(e.pointerId);$('cv').style.cursor='grabbing';e.preventDefault();
+ $('cv').style.cursor='grabbing';e.preventDefault();
 });
 $('cv').addEventListener('pointermove',e=>{
+ if(pointers.has(e.pointerId))pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+ if(pinch&&pointers.size>=2){
+  const a=pointers.get(pinch.ids[0]),b=pointers.get(pinch.ids[1]);
+  if(a&&b){
+   const dist=Math.hypot(a.x-b.x,a.y-b.y),p=P[pinch.k];
+   if(p&&pinch.dist0>0){p.zoom=Math.max(1,Math.min(3,pinch.startZoom*(dist/pinch.dist0)));render()}
+  }
+  e.preventDefault();return;
+ }
  if(!panDrag)return;
  const pt=cvPt(e),p=P[A],dx=pt.x-panDrag.sx,dy=pt.y-panDrag.sy;
  if(panDrag.rx>0.01)p.ox=Math.max(-100,Math.min(100,panDrag.sox+dx/panDrag.rx*100));
  if(panDrag.ry>0.01)p.oy=Math.max(-100,Math.min(100,panDrag.soy+dy/panDrag.ry*100));
- $('ox').value=p.ox;$('oy').value=p.oy;render();
+ render();
 });
-['pointerup','pointercancel','pointerleave'].forEach(ev=>$('cv').addEventListener(ev,()=>{if(panDrag){panDrag=null;$('cv').style.cursor='grab';queueSave&&queueSave()}}));
+['pointerup','pointercancel','pointerleave'].forEach(ev=>$('cv').addEventListener(ev,e=>{
+ pointers.delete(e.pointerId);
+ if(pinch&&(e.pointerId===pinch.ids[0]||e.pointerId===pinch.ids[1])){pinch=null;queueSave&&queueSave()}
+ if(pointers.size<2)pinch=null;
+ if(panDrag){panDrag=null;$('cv').style.cursor='grab';queueSave&&queueSave()}
+}));
+let wheelSave=null;
+$('cv').addEventListener('wheel',e=>{
+ const pt=cvPt(e),hit=hitTest(pt.x,pt.y);if(!hit)return;
+ e.preventDefault();
+ if(A!==hit.k){A=hit.k;refreshUI()}
+ const p=P[A];if(!p.img)return;
+ p.zoom=Math.max(1,Math.min(3,p.zoom-e.deltaY*0.0015));
+ render();
+ clearTimeout(wheelSave);wheelSave=setTimeout(()=>queueSave&&queueSave(),300);
+},{passive:false});
 let pvMode='after';
 function pvDraw(){
  const c=$('pvC'),g=c.getContext('2d'),mm=25.4,ppm=8;
@@ -436,8 +445,8 @@ $('file').onchange=e=>{
   im.onload=()=>{
    let src=im;const k=Math.min(1,2400/Math.max(im.width,im.height));
    if(k<1){const c=document.createElement('canvas');c.width=Math.round(im.width*k);c.height=Math.round(im.height*k);c.getContext('2d').drawImage(im,0,0,c.width,c.height);src=c}
-   S.orig=src;S.img=src;S.src=src;S.bgOn=false;S.auto=false;S.br=0;S.ct=0;S.sh=0;S.rot=0;S.hist=null;syncFix();S.zoom=1;S.ox=0;S.oy=0;
-   $('zoom').value=1;$('ox').value=0;$('oy').value=0;S.name=f.name;$('fname').textContent=f.name;renderTabs();say('');render();
+   S.orig=src;S.img=src;S.src=src;S.bgOn=false;S.rot=0;S.hist=null;syncFix();S.zoom=1;S.ox=0;S.oy=0;
+   S.name=f.name;$('fname').textContent=f.name;renderTabs();say('');render();
   };
   im.src=rd.result;
  };
@@ -447,8 +456,12 @@ const CR={r:null,mode:null,sc:1,lock:true};
 function cropMax(){const a=S.pw/S.ph,W=S.orig.width,H=S.orig.height;let w=W,h=w/a;if(h>H){h=H;w=h*a}return{w,h,a}}
 function cropReset(){const m=cropMax(),W=S.orig.width,H=S.orig.height;CR.r={x:(W-m.w)/2,y:(H-m.h)/2,w:m.w,h:m.h};$('cs').value=100}
 function cropDraw(){
- const c=$('cc'),g=c.getContext('2d'),sc=CR.sc,r=CR.r;
- g.clearRect(0,0,c.width,c.height);g.drawImage(S.orig,0,0,c.width,c.height);
+ const c=$('cc'),g=c.getContext('2d'),sc=CR.sc,r=CR.r,rad=(S.rot||0)*Math.PI/180;
+ g.clearRect(0,0,c.width,c.height);
+ g.save();
+ if(rad){g.translate(c.width/2,c.height/2);g.rotate(rad);g.translate(-c.width/2,-c.height/2)}
+ g.drawImage(S.orig,0,0,c.width,c.height);
+ g.restore();
  const X=r.x*sc,Y=r.y*sc,Wd=r.w*sc,Hd=r.h*sc;
  g.fillStyle='rgba(0,0,0,.55)';
  g.fillRect(0,0,c.width,Y);g.fillRect(0,Y+Hd,c.width,c.height-Y-Hd);g.fillRect(0,Y,X,Hd);g.fillRect(X+Wd,Y,c.width-X-Wd,Hd);
@@ -513,7 +526,7 @@ $('cA').onclick=()=>{
  pushHist();
  const r=CR.r,c=document.createElement('canvas');c.width=Math.round(r.w);c.height=Math.round(r.h);
  c.getContext('2d').drawImage(S.orig,r.x,r.y,r.w,r.h,0,0,c.width,c.height);
- S.img=c;S.zoom=1;S.ox=0;S.oy=0;$('zoom').value=1;$('ox').value=0;$('oy').value=0;
+ S.img=c;S.zoom=1;S.ox=0;S.oy=0;
  $('cropM').style.display='none';fix();queueSave();
 };
 const say=t=>{$('toast').textContent=t};
@@ -586,7 +599,7 @@ function saveProject(){
  try{
   const data={S:{sheet:S.sheet,orient:S.orient,unit:S.unit,cw:S.cw,ch:S.ch,gap:S.gap,margin:S.margin,bord:S.bord,bc:S.bc,bt:S.bt,cut:S.cut,newRow:S.newRow},
    A,
-   P:P.map(p=>({orig:imgToStore(p.orig,1200),img:imgToStore(p.img,1000),pw:p.pw,ph:p.ph,copies:p.copies,zoom:p.zoom,ox:p.ox,oy:p.oy,rot:p.rot||0,auto:p.auto,br:p.br,ct:p.ct,sh:p.sh,bgOn:p.bgOn,bgt:p.bgt,bgc1:p.bgc1,bgc2:p.bgc2,bgtol:p.bgtol,bge:p.bge,name:p.name}))
+   P:P.map(p=>({orig:imgToStore(p.orig,1200),img:imgToStore(p.img,1000),pw:p.pw,ph:p.ph,copies:p.copies,zoom:p.zoom,ox:p.ox,oy:p.oy,rot:p.rot||0,bgOn:p.bgOn,bgt:p.bgt,bgc1:p.bgc1,bgc2:p.bgc2,bgtol:p.bgtol,bge:p.bge,name:p.name}))
   };
   localStorage.setItem(PKEY,JSON.stringify(data));
   $('saveStat').textContent='Saved just now';
@@ -603,7 +616,7 @@ async function loadProjectStartup(){
   const orig=await loadImgFromStore(sp.orig);
   const img=(await loadImgFromStore(sp.img))||orig;
   const np=newPhoto(sp.copies||1);
-  Object.assign(np,{orig,img,src:img,pw:sp.pw||35,ph:sp.ph||45,zoom:sp.zoom||1,ox:sp.ox||0,oy:sp.oy||0,rot:sp.rot||0,auto:sp.auto||false,br:sp.br||0,ct:sp.ct||0,sh:sp.sh||0,bgOn:sp.bgOn||false,bgt:sp.bgt||'color',bgc1:sp.bgc1||'#ffffff',bgc2:sp.bgc2||'#cfe6ff',bgtol:sp.bgtol||30,bge:sp.bge||1,name:sp.name||''});
+  Object.assign(np,{orig,img,src:img,pw:sp.pw||35,ph:sp.ph||45,zoom:sp.zoom||1,ox:sp.ox||0,oy:sp.oy||0,rot:sp.rot||0,bgOn:sp.bgOn||false,bgt:sp.bgt||'color',bgc1:sp.bgc1||'#ffffff',bgc2:sp.bgc2||'#cfe6ff',bgtol:sp.bgtol||30,bge:sp.bge||1,name:sp.name||''});
   P.push(np);
  }
  if(!P.length)P.push(newPhoto(6));
